@@ -297,7 +297,7 @@ def run_mapper(data_array, col_names, interval, overlap, clustering_alg, cluster
         """
         # data_array = np.array(data_array)
 
-        km_result = _call_kmapper(data_array, col_names, 
+        km_result, lens = _call_kmapper(data_array, col_names, 
             interval,
             overlap,
             clustering_alg,
@@ -305,7 +305,8 @@ def run_mapper(data_array, col_names, interval, overlap, clustering_alg, cluster
             filter_function,
             filter_parameters
         )
-        return _parse_result(km_result, data_array)
+        print(lens)
+        return _parse_result(km_result, filter_function, lens, data_array)
 
 def _call_kmapper(data, col_names, interval, overlap, clustering_alg, clustering_alg_params, filter_function, filter_parameters=None):
     print(filter_parameters)
@@ -347,7 +348,8 @@ def _call_kmapper(data, col_names, interval, overlap, clustering_alg, clustering
     print(len(graph['nodes'].keys()))
     # graph = mapper.map(lens, data_new, clusterer=cluster.DBSCAN(eps=eps, min_samples=min_samples), cover=Cover(n_cubes=interval, perc_overlap=overlap))
 
-    return graph
+    # return graph
+    return (graph, lens)
 
 def compute_lens(f, data, mapper, filter_parameters=None):
     data_array = np.array(data)
@@ -379,7 +381,7 @@ def compute_lens(f, data, mapper, filter_parameters=None):
     return lens
 
 
-def _parse_result(graph, data_array=[]):
+def _parse_result(graph, filter_function, lens, data_array=[]):
     if len(data_array)>0:
         col_names = data_array.columns
         data_array = np.array(data_array)
@@ -394,6 +396,17 @@ def _parse_result(graph, data_array=[]):
         name2id[key] = i
         cluster = graph['nodes'][key]
         nodes_detail[i] = cluster
+        lens_values = {}
+        if len(filter_function) == 1:
+            lens_data = lens[cluster]
+            lens_avg = np.mean(lens_data)
+            lens_values[filter_function[0]] = lens_avg
+        elif len(filter_function) == 2:
+            for j in range(len(filter_function)):
+                lens_j = lens[j,:]
+                lens_data = lens_j[cluster]
+                lens_avg = np.mean(lens_data)
+                lens_values[filter_function[j]] = lens_avg
         if len(data_array)>0:
             cluster_data = data_array[cluster]
             cluster_avg = np.mean(cluster_data, axis=0)
@@ -404,12 +417,14 @@ def _parse_result(graph, data_array=[]):
                 "id": str(i),
                 "size": len(graph['nodes'][key]),
                 "avgs": cluster_avg_dict,
+                "lens_avg": lens_values,
                 "vertices": cluster
                 })
         else:
             data['nodes'].append({
                 "id": str(i),
                 "size": len(graph['nodes'][key]),
+                "lens_avg": lens_values,
                 "vertices": cluster
                 })
         i += 1

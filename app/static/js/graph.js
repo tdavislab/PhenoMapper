@@ -28,8 +28,8 @@ class Graph{
             .attr("id","graph-link-group");
         this.node_group = this.graphSvg_g.append("g")
             .attr("id","graph-node-group");
-        this.label_group = this.graphSvg_g.append("g")
-            .attr("id","graph-label-group");
+        this.axis_group = this.graphSvg_g.append("g")
+            .attr("id","graph-axis-group");
 
         d3.select(".sidebar-container").style("height", this.height)
             
@@ -40,12 +40,17 @@ class Graph{
         this.hist_scale = this.get_scale();
 
         // color functions
+        // this.COLORMAPS = {"- None -":undefined, 
+        // "Yellow, Red":["yellow", "red"], 
+        // "Purple, Red":["purple", "red"],
+        // "Yellow, Blue":["yellow", "blue"], 
+        // "Green, Blue":["green", "blue"]};
         this.COLORMAPS = {"- None -":undefined, 
-        "Yellow, Red":["yellow", "red"], 
-        "Purple, Red":["purple", "red"],
-        "Yellow, Blue":["yellow", "blue"], 
-        "Green, Blue":["green", "blue"]};
-        this.colorScale = d3.scaleLinear();
+        "spectral":d3.interpolateSpectral, 
+        "turbo":d3.interpolateTurbo,
+        "RdYlBu":d3.interpolateRdYlBu};
+        // this.colorScale = d3.scaleLinear();
+        this.colorScale = d3.scaleSequential(d3.interpolateSpectral);
 
         // this.COLORMAPS = [
         //     { 'label': '- None -', 'scheme': null },
@@ -70,6 +75,7 @@ class Graph{
         this.size_functions();
         this.select_view();
         this.draw_mapper();
+        // this.draw_mapper_fd();
         this.selection_nodes();
     }
 
@@ -127,17 +133,26 @@ class Graph{
                 that.fill_vertex(value);
                 $("#color_function_maps").prop("disabled", false);
                 $("#color_function_scale").prop("disabled", false);
-            }
-            
+            }            
         }
         
         map_dropdown.onchange = function(){
             map = map_dropdown.options[map_dropdown.selectedIndex].text;
             if(that.COLORMAPS[map]){
-                that.colorScale.range(that.COLORMAPS[map]);
+                console.log(map)
+                if(map === "turbo"){
+                    that.colorScale = d3.scaleSequential(d3.interpolateTurbo);
+                } else if(map === "RdYlBu"){
+                    that.colorScale = d3.scaleSequential(d3.interpolateRdYlBu);
+                } else if(map === "spectral"){
+                    that.colorScale = d3.scaleSequential(d3.interpolateSpectral);
+                }
+                
+                // that.colorScale.range(that.COLORMAPS[map]);
                 that.draw_color_legend(that.colorScale);
             } else { 
-                that.colorScale.range([undefined, undefined]); 
+                that.colorScale = undefined;
+                // that.colorScale.range([undefined, undefined]); 
                 $('#color-legend-svg').remove();
             }
             that.fill_vertex(value);
@@ -607,7 +622,8 @@ class Graph{
         d3.selectAll(".viewer-graph__edge").classed("selected", false);
     }
 
-    draw_mapper(){
+    draw_mapper_fd(){
+        console.log(this.nodes)
         let simulation = d3.forceSimulation(this.nodes)
             .force("link", d3.forceLink(this.links).id(function(d) { return d.id; }))
             .force("charge", d3.forceManyBody().strength(-200))
@@ -721,29 +737,32 @@ class Graph{
                 this.text_cluster_details(this.selected_nodes, this.label_column, this.labels);
             });
 
-
-
         ng.append("circle")
             .classed("viewer-graph__vertex",true)
             .attr("fill", "#fff")
             .attr("id",(d)=>"node"+d.id)
             .attr("r", 12);
 
+        ng.append("text")
+            .classed("viewer-graph__label", true)
+            .attr("fill", "#555")
+            .attr("id",(d)=>"node-label"+d.id)
+            .text((d)=>d.id)
+            .attr("x",d=>-3)
+            .attr("y",d=>4);
+
         let lg = this.link_group.selectAll("line").data(this.links);
         lg.exit().remove();
         lg = lg.enter().append("line").merge(lg);
         lg
             .classed("viewer-graph__edge",true)
-            .attr("id",d=>"link"+d.source.id+"_"+d.target.id);
-
-        let lbg = this.label_group.selectAll("text").data(this.nodes);
-        lbg.exit().remove();
-        lbg = lbg.enter().append("text").merge(lbg);
-        lbg
-            .classed("viewer-graph__label", true)
-            .attr("fill", "#555")
-            .attr("id",(d)=>"node-label"+d.id)
-            .text((d)=>d.id);
+            .attr("id",d=>"link"+d.source.id+"_"+d.target.id)
+            // .attr("x1", d => lens_scale(d.source.lens_avg[selected_lens]))
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            // .attr("x2", d => lens_scale(d.target.lens_avg[selected_lens]))
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
 
         simulation
             .nodes(this.nodes)
@@ -765,11 +784,6 @@ class Graph{
                 .attr("transform", function (d) {
                     return "translate(" + d.x + "," + d.y + ")";
                 });
-    
-            // **** TODO **** how to make the label centered?
-            lbg
-                .attr("x",d=>d.x-3)
-                .attr("y",d=>d.y+4);
         }
     
         function dragstarted(d) {
@@ -787,6 +801,264 @@ class Graph{
             if (!d3.event.active) {simulation.alphaTarget(0);
             d.fx = null;
             d.fy = null;}
+        }
+
+        const zoom_handler = d3.zoom()
+            .on("zoom", zoom_actions);
+
+        // drag_handler(ng);
+        zoom_handler(this.graphSvg);
+
+        function zoom_actions() {
+            that.graphSvg_g.attr("transform", d3.event.transform);
+        }
+    }
+
+    draw_mapper(){
+        console.log(this.nodes)
+        let simulation = d3.forceSimulation(this.nodes)
+            .force("link", d3.forceLink(this.links).id(function(d) { return d.id; }))
+            .force("charge", d3.forceManyBody().strength(-200))
+            .force("center", d3.forceCenter(this.width/2, this.height/2))
+            .force("x", d3.forceX().strength(0.2))
+            .force("y", d3.forceY().strength(0.4))
+            .stop();
+
+        this.nodes.forEach(node=>{
+            node.links = {"source":[], "target":[]};
+        })
+
+        this.links.forEach(l=>{
+            l.source.links.source.push(`link${l.source.id}_${l.target.id}`);
+            l.target.links.target.push(`link${l.source.id}_${l.target.id}`);
+        })
+
+        let selected_lens = 'DAP';
+        // let selected_lens = 'x';
+
+        let margin = 40;
+        let lens_values = this.nodes.map(d=>d.lens_avg[selected_lens]);
+        let lens_scale = d3.scaleLinear()
+            .domain([Math.min(...lens_values), Math.max(...lens_values)])
+            .range([margin, this.width-margin])
+
+
+        this.nodes.forEach(node=>{
+            node.fx = lens_scale(node.lens_avg[selected_lens]);
+        })
+
+        simulation.tick(300);
+
+        let y_max = Math.max(...this.nodes.map(d=>d.y));
+
+        // draw axis
+        let lens_axis = d3.axisBottom(lens_scale).ticks(5);
+        this.axis_group.append("g")
+            .classed("axis", true)
+            .attr("transform", `translate(0,${y_max+20})`)
+            .call(lens_axis);
+        
+        this.axis_group.append("text")
+            .attr("transform", `translate(${this.width/2},${Math.max(...this.nodes.map(d=>d.y))+60})`)
+            .text(selected_lens)
+        
+        let ng = this.node_group.selectAll("g").data(this.nodes);
+        ng.exit().remove();
+        ng = ng.enter().append("g").merge(ng)
+            .attr("transform", function (d) {
+                return "translate(" + d.x + "," + d.y + ")";
+            })
+            .attr("class", "viewer-graph__vertex-group")
+            .attr("id",(d)=>"group"+d.id)
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended))
+            .on("mouseover", (d)=>{
+                if(this.if_select_node) {
+                    if(this.selected_nodes.indexOf(d.id) === -1){
+                        this.highlight_selectable(d.id);
+                    }
+                } else if(this.if_select_cluster) {
+                    if(this.selected_nodes.indexOf(d.id) === -1) {
+                        let cluster = this.connected_components[d.clusterId];
+                        cluster.forEach(nId=>{
+                            this.highlight_selectable((nId+1).toString());
+                        })
+                    }
+                }
+                else if(this.if_select_path){
+                    if(this.selected_nodes.length === 0){
+                        this.highlight_selectable(d.id);
+                    }
+                    else { // this.selected_nodes.length > 0
+                        let path = this.dijkstra(this.path_start_id);
+                        this.highlight_path(path, this.path_start_id, d.id);
+                    }
+                }
+            })
+            .on("mouseout", ()=>{
+                if(this.if_select_node || this.if_select_cluster || this.if_select_path){
+                    this.unhighlight_selectable();
+                }             
+            })
+            .on("click",(d)=>{
+                this.clicking = true;
+                if(this.if_select_node){
+                    this.unhighlight_selectable();
+                    if(this.selected_nodes.indexOf(d.id)===-1){ // Selecting nodes
+                        this.selected_nodes.push(d.id);
+                        this.highlight_selected(d.id)
+                    } else{ // Unselecting
+                        this.selected_nodes.splice(this.selected_nodes.indexOf(d.id),1);
+                        this.unhighlight_selected(d.id)
+                    }
+                    this.draw_hist();
+                } else if(this.if_select_cluster){
+                    this.unhighlight_selectable();
+                    let cluster = this.connected_components[d.clusterId];
+                    if(this.selected_nodes.indexOf(d.id)===-1){
+                        cluster.forEach(nodeId=>{
+                            this.selected_nodes.push((nodeId+1).toString());
+                        })
+                        this.nodes.forEach(node=>{
+                            if(node.clusterId === d.clusterId){                                
+                                this.highlight_selected(node.id)
+                            } 
+                        })
+                    } else{
+                        cluster.forEach(nId=>{
+                            this.selected_nodes.splice(this.selected_nodes.indexOf((nId+1).toString()),1);
+                            this.unhighlight_selected((nId+1).toString());
+                        })
+                    }
+                    this.draw_hist();
+                } else if(this.if_select_path){
+                    this.unhighlight_selectable();
+                    if(this.selected_nodes.length===0){
+                        this.selected_nodes.push(d.id);
+                        this.highlight_selected(d.id)
+                        this.selectable_nodes = this.connected_components[d.clusterId].map(nIdx=>(nIdx+1).toString());
+                        this.selectable_nodes.splice(this.selectable_nodes.indexOf(d.id),1);
+                        this.path_start_id = d.id;
+                    } else if(this.selectable_nodes.indexOf(d.id)!=-1){
+                        let startId = this.path_start_id;
+                        let path = this.dijkstra(startId);
+                        let currentId = d.id;
+                        let kk = 0;
+                        while (currentId!=startId && kk < 500){
+                            this.selected_nodes.push(currentId);
+                            this.selectable_nodes.splice(this.selectable_nodes.indexOf(currentId), 1);
+                            let nextId = path[currentId];
+                            d3.select("#link"+currentId+"_"+nextId).classed("selected", true);
+                            d3.select("#link"+nextId+"_"+currentId).classed("selected", true);
+                            this.highlight_selected(currentId)
+                            currentId = nextId;
+                            kk += 1;
+                        }
+                        this.path_start_id = d.id;
+                    }
+                    this.nodes.forEach(node=>{
+                        if(this.selectable_nodes.indexOf(node.id)===-1 && this.selected_nodes.indexOf(node.id)===-1){
+                            this.highlight_unselectable(node.id);
+                        } else{
+                            this.unhighlight_unselectable(node.id);
+                        }
+                    })
+                    this.draw_hist();
+                }
+                console.log(this.selected_nodes)
+                this.text_cluster_details(this.selected_nodes, this.label_column, this.labels);
+            });
+
+
+
+        ng.append("circle")
+            .classed("viewer-graph__vertex",true)
+            .attr("fill", "#fff")
+            .attr("id",(d)=>"node"+d.id)
+            .attr("r", 12);
+
+        ng.append("text")
+            .classed("viewer-graph__label", true)
+            .attr("fill", "#555")
+            .attr("id",(d)=>"node-label"+d.id)
+            .text((d)=>d.id)
+            .attr("x",d=>-3)
+            .attr("y",d=>4);
+
+        let lg = this.link_group.selectAll("line").data(this.links);
+        lg.exit().remove();
+        lg = lg.enter().append("line").merge(lg);
+        lg
+            .classed("viewer-graph__edge",true)
+            .attr("id",d=>"link"+d.source.id+"_"+d.target.id)
+            // .attr("x1", d => lens_scale(d.source.lens_avg[selected_lens]))
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            // .attr("x2", d => lens_scale(d.target.lens_avg[selected_lens]))
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
+
+        // simulation
+        //     .nodes(this.nodes)
+        //         .on("tick", ticked);
+
+        // simulation.force("link")
+        //     .links(this.links);
+
+        let that = this;
+        function ticked() {
+            lg
+                .attr("x1", d => lens_scale(d.source.lens_avg[selected_lens]))
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => lens_scale(d.target.lens_avg[selected_lens]))
+                .attr("y2", d => d.target.y);
+        
+            let radius = 8;
+            ng
+                .attr("transform", function (d) {
+                    return "translate(" + lens_scale(d.lens_avg[selected_lens]) + "," + d.y + ")";
+                });
+    
+            // **** TODO **** how to make the label centered?
+            lbg
+                .attr("x",d=>lens_scale(d.lens_avg[selected_lens])-3)
+                .attr("y",d=>d.y+4);
+        }
+    
+        function dragstarted(d) {
+            
+            // if (!d3.event.active) {simulation.alphaTarget(0.3).restart();
+            // d.fx = d.x;
+            // d.fy = d.y;}
+        }
+    
+        function dragged(d) {
+            // d.fx = d3.event.x;
+            // d.fy = d3.event.y;
+            // d.x = d3.mouse(this.parentNode)[0];
+            d.y = d3.mouse(this.parentNode)[1];
+            d3.select(`#group${d.id}`).attr("transform", `translate(${d.x}, ${d.y})`)
+            d.links.source.forEach(eid=>{
+                d3.select(`#${eid}`).attr("x1", d.x).attr("y1", d.y);
+            });
+            d.links.target.forEach(eid=>{
+                d3.select(`#${eid}`).attr("x2", d.x).attr("y2", d.y);
+            });
+        }
+    
+        function dragended(d) {
+            // if (!d3.event.active) {simulation.alphaTarget(0);
+            // d.fx = null;
+            // d.fy = null;}
+            d3.select(`#group${d.id}`).attr("transform", `translate(${d.x}, ${d.y})`)
+            d.links.source.forEach(eid=>{
+                d3.select(`#${eid}`).attr("x1", d.x).attr("y1", d.y);
+            });
+            d.links.target.forEach(eid=>{
+                d3.select(`#${eid}`).attr("x2", d.x).attr("y2", d.y);
+            });
         }
 
         const zoom_handler = d3.zoom()
@@ -890,12 +1162,6 @@ class Graph{
             })
     }
 
-    // unfill_vertex(){
-    //     d3.selectAll(".pie-group").remove();
-    //     d3.selectAll(".viewer-graph__vertex").style("fill", "white");
-    //     d3.selectAll(".viewer-graph__label").style("fill", "#555");
-    // }
-
     fill_vertex_categorical(col_key){
         d3.selectAll(".viewer-graph__pie").remove();
         d3.selectAll(".viewer-graph__vertex").attr("fill", "#fff");
@@ -951,6 +1217,9 @@ class Graph{
                     color_dict[c] = p.color;
                 }
                 pie_data.push(p);
+            }
+            if(pie_data.length > 16){
+                pie_data = pie_data.slice(0,13);
             }
             return pie_data;
         }

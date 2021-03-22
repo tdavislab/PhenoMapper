@@ -270,8 +270,8 @@ class DataLoader{
         d3.select("#clustering-paramters-inner").remove();
         d3.select("#clustering-paramters").append("div").attr("id", "clustering-paramters-inner");
         if(clustering_alg === "DBSCAN"){
-            this.add_range_slider("clustering-paramters-inner", "eps", "dbscan_eps", 0.1, 0.5, 0.1);
-            this.add_range_slider("clustering-paramters-inner", "Min samples", "dbscan_min_samples", 5, 10, 2, 1);
+            this.add_range_slider("clustering-paramters-inner", "eps", "dbscan_eps", 0.6, 0.6, 0.1);
+            this.add_range_slider("clustering-paramters-inner", "Min samples", "dbscan_min_samples", 2, 10, 2, 1);
         } else if(clustering_alg === "Agglomerative Clustering"){
             this.add_dropdown("clustering-paramters-inner", "Linkage", "agglomerative_linkage", ["ward", "average", "complete", "single"]);
             this.add_range_slider("clustering-paramters-inner", "Distance threshold", "agglomerative_dist", 0.1, 0.5, 0.1);
