@@ -361,6 +361,22 @@
             </div>   
           </div>
         </div>
+        <div id="workspace-graph_layout" class="block">
+          <div class="block_title">Graph Layout</div>
+          <div class="block_body" style="max-height: 1000px">
+            <div class="block_body-inner">
+              <div class="row" style="padding-top:5px; padding-bottom:5px;">
+                <div class="col-sm-2 col-form-label">Layout</div>
+                <div class="col-sm-10" id="size-function-container"> 
+                  <select class="custom-select"  name="size_function_values" id="size_function_values">
+                    <option>Force directed layout</option>
+                    <option>Sorted by filter function</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
         <div id="workspace-color_functions" class="block"> 
           <div class="block_title">Color Functions</div>
           <div class="block_body" style="max-height: 1000px"> 
@@ -462,6 +478,15 @@
                 <div class="col-sm-9" id="label-column-container"><select name="label_column" class="custom-select" id="label_column_selection"></select></div>
               </div>
               <div id="nodes-details-labels"></div>
+            </div>
+          </div>
+        </div>
+        <div id="workspace-exporting" class="block">
+          <div class="block_title">Export</div>
+          <div class="block_body" style="max-height: 1000px">
+            <div class="block_body-inner">
+              <input type="button" class="btn btn-outline-dark btn-block ui-form-button" id="export-clusters" value="Export Clusters">
+              <input type="button" class="btn btn-outline-dark btn-block ui-form-button" id="export-mapper-graph" value="Export Mapper Graph">
             </div>
           </div>
         </div>
