@@ -74,9 +74,21 @@ class Graph{
         this.color_functions();
         this.size_functions();
         this.select_view();
-        this.draw_mapper();
-        // this.draw_mapper_fd();
+        // this.draw_mapper();
+        this.draw_mapper_fd();
         this.selection_nodes();
+
+        this.layout_alg = "Force directed layout";
+        let layout_dropdown = document.getElementById("graph_layout_dropdown");
+        let that = this;
+        layout_dropdown.onchange = function(){
+            let layout_alg = layout_dropdown.options[layout_dropdown.selectedIndex].text;
+            if(layout_alg === "Force directed layout"){
+                that.draw_mapper_fd();
+            } else{
+                that.draw_mapper();
+            }
+        }
     }
 
     color_functions(){
@@ -193,6 +205,39 @@ class Graph{
             })
     }
 
+    draw_size_legend(size_scale){
+        $('#size-legend-svg').remove();
+        $('#block_body-inner_size').append('<svg width="0" height="0" id="size-legend-svg"></svg>');
+        let width = $(d3.select("#workspace-size_functions").node()).width();
+        let height = 60;
+        let margin = 20;
+        let svg = d3.select("#size-legend-svg").attr('width', width).attr('height', height);
+
+        let min_circle = svg.append("g").attr("transform", `translate(${margin}, ${margin})`);
+        let max_circle = svg.append("g").attr("transform", `translate(${width - 4*margin}, ${margin})`);
+
+        let f = d3.format(".2f");
+
+        min_circle.append("circle")
+            .attr("r", size_scale.range()[0])
+            .attr("stroke", "grey")
+            .attr("fill", "none");
+        min_circle.append("text")
+            .attr("x", -3*size_scale.range()[0]/2)
+            .attr("y", size_scale.range()[1]+margin)
+            .text(f(size_scale.range()[0]));
+
+        max_circle.append("circle")
+            .attr("r", size_scale.range()[1])
+            .attr("stroke", "grey")
+            .attr("fill", "none");
+        max_circle.append("text")
+            .attr("x", -size_scale.range()[1])
+            .attr("y", size_scale.range()[1]+margin)
+            .text(f(size_scale.range()[1]));
+
+
+    }
 
     draw_color_legend(color_scale){
         // reset svg 
@@ -307,6 +352,7 @@ class Graph{
                     arc.outerRadius(r);
                     return arc(d);
                 })
+            that.draw_size_legend(that.size_scales[size]);
         }
     }
 
@@ -1167,7 +1213,7 @@ class Graph{
         d3.selectAll(".viewer-graph__vertex").attr("fill", "#fff");
         d3.selectAll(".viewer-graph__label").attr("fill", "#555");
         let color_categorical = d3.scaleOrdinal(d3.schemeCategory10);
-        let color_dict = {};
+        let color_dict = {'KS; A':'#1f77b4', 'KS; B':'#ff7f0e', 'NE; A':'#2ca02c', 'NE; B':'#d62728'};
         // // get # catogories
         // this.nodes.forEach(node=>{
         //     for(let c in node.categorical_cols_summary[col_key]){
@@ -1207,15 +1253,16 @@ class Graph{
                 p.category_id = c;
                 p.value = node.categorical_cols_summary[col_key][c];
                 p.node_id = node.id;
-                if(Object.keys(color_dict).indexOf(c)!=-1){
-                // if(color_dict[c]!=""){
-                    p.color = color_dict[c];
-                } else {
-                    p.color = color_categorical(idx);
-                    // p.color = d3.interpolateRainbow((idx+1)/Object.keys(color_dict).length);
-                    idx += 1;
-                    color_dict[c] = p.color;
-                }
+                p.color = color_dict[c]
+                // if(Object.keys(color_dict).indexOf(c)!=-1){
+                // // if(color_dict[c]!=""){
+                //     p.color = color_dict[c];
+                // } else {
+                //     p.color = color_categorical(idx);
+                //     // p.color = d3.interpolateRainbow((idx+1)/Object.keys(color_dict).length);
+                //     idx += 1;
+                //     color_dict[c] = p.color;
+                // }
                 pie_data.push(p);
             }
             if(pie_data.length > 16){
@@ -1223,6 +1270,7 @@ class Graph{
             }
             return pie_data;
         }
+        console.log("color_dict",color_dict)
 
         return color_dict;
     }

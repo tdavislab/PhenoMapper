@@ -1,12 +1,14 @@
 {"modules":
     [
+        
         {
-            "name":"Nearest Neighbors",
-            "id":"nearest_neighbor",
-            "function-name": "na",
+            "name":"Logistic Regression",
+            "id":"logistic_regression",
+            "function-name": "statsmodels.api.Logit",
             "function-parameters":{},
-            "module-type": "na",
-            "components": ["line graph"]
+            "input-variables":{"dependent":"Location_binary", "independent":["Temperature", "Solar.Rad", "Humidity", "Rainfall"]},
+            "module-type": "supervised_learning",
+            "components": ["table"]
 
         }
         

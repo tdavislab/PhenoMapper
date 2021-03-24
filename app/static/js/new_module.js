@@ -21,7 +21,7 @@ class New_Module{
         panel_container.append("div").attr("id", this.module_id+"-panel_title").classed("block_title", true).html(this.module_name);
         let panel_body = panel_container.append("div").classed("block_body", true).style("max-height","1000px");
         this.panel_body_inner = panel_body.append("div").attr("id",this.module_id+"-block_body-inner").classed("block_body-inner", true);
-        $("#"+this.module_id+"-block_body-inner").append("<input type='button' class='btn btn-outline-dark btn-block ui-form-button' id='"+this.module_id+"_button' value='Approximate "+this.module_name+"'>")
+        $("#"+this.module_id+"-block_body-inner").append("<input type='button' class='btn btn-outline-dark btn-block ui-form-button' id='"+this.module_id+"_button' value='Run "+this.module_name+"'>")
 
 
         let panel_title = document.getElementById(this.module_id+"-panel_title");

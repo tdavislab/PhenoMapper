@@ -477,3 +477,23 @@ $.post("/module_extension",{
     
 })
 
+// Export
+$("#export-clusters").click(function(){
+    // let v = $("#exFilename").val();
+    let clusters;
+    $.post( "/export_clusters", {
+        javascript_data: JSON.stringify(clusters)
+    });
+   
+    alert("Clusters saved");
+})
+
+$("#export-mapper-graph").click(function(){
+    // let v = $("#exFilename").val();
+    let mapper_graph;
+    $.post( "/export_graph", {
+        javascript_data: JSON.stringify(mapper_graph)
+    });
+   
+    alert("Mapper graph saved");
+})

@@ -403,7 +403,7 @@ def _parse_result(graph, filter_function, lens, data_array=[]):
             lens_values[filter_function[0]] = lens_avg
         elif len(filter_function) == 2:
             for j in range(len(filter_function)):
-                lens_j = lens[j,:]
+                lens_j = lens[:,j]
                 lens_data = lens_j[cluster]
                 lens_avg = np.mean(lens_data)
                 lens_values[filter_function[j]] = lens_avg
@@ -494,14 +494,14 @@ def module_computing():
     data, cols = get_selected_data(selected_nodes)
     module_info = json_data['module_info']
     data_new = call_module_function(data, cols, module_info)
-    # data_new['kmeans_cluster'] = KMeans(n_clusters=4, random_state=0).fit(data_new).labels_
-    # data_new = data_new.to_json(orient='records')
-    # return jsonify(module_result=data_new)
+    data_new['kmeans_cluster'] = KMeans(n_clusters=4, random_state=0).fit(data_new).labels_
+    data_new = data_new.to_json(orient='records')
+    return jsonify(module_result=data_new)
     return data_new
-    # # kNN graph
+    # kNN graph
     # from pynndescent import NNDescent
     # df = pd.read_csv(APP_STATIC+"/uploads/processed_data.csv")
-    # activations = df.iloc[:, 0:512]
+    # activations = np.array(df['GrowthRate']).reshape(-1,1)
     # k=5
     # index = NNDescent(activations, n_neighbors=15, metric='euclidean')
     # out = index.query(activations, k=k)
