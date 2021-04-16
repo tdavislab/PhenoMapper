@@ -2,7 +2,7 @@
 
 
 
-Mapper Interactive is a web-based framework for interactive analysis and visualization of high-dimensional point cloud data  built upon the Mapper algorithm. It is an open source software released under the MIT License.
+PhenoMapper is an extension of Mapper Interactive, which is a web-based framework for interactive analysis and visualization of high-dimensional point cloud data built upon the mapper algorithm.
 
 The Mapper algorithm is a tool from topological data analysis first introduced by Gurjeet Singh, Facundo Mémoli and Gunnar Carlsson in 2007 (http://dx.doi.org/10.2312/SPBG/SPBG07/091-100). 
 
@@ -40,13 +40,13 @@ When loading a dataset into the interface, please make sure to put the data file
 ## Command-line API
 Please refer to a user-guide [here](CLI_README.md) for the command-line API.
 
-## Video
+<!-- ## Video
 
-[![Screenshot of video](app/static/assets/video-teaser.png)](https://www.youtube.com/watch?v=z2VEkv1apF8)
+[![Screenshot of video](app/static/assets/video-teaser.png)](https://www.youtube.com/watch?v=z2VEkv1apF8) -->
 
-## License
+<!-- ## License
 
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+This project is licensed under the MIT License - see the `LICENSE` file for details. -->
 
 ## Contributing
 
