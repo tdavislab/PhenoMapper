@@ -1,6 +1,6 @@
 # PhenoMapper
 
-PhenoMapper is an extension of [Mapper Interactive], which is a web-based framework for interactive analysis and visualization of high-dimensional point cloud data built upon the mapper algorithm.
+PhenoMapper is an extension of [Mapper Interactive](https://github.com/MapperInteractive/MapperInteractive), which is a web-based framework for interactive analysis and visualization of high-dimensional point cloud data built upon the mapper algorithm.
 
 ## Installation
 
