@@ -48,7 +48,7 @@ class Graph{
         this.COLORMAPS = {"- None -":undefined, 
         "spectral":d3.interpolateSpectral, 
         "turbo":d3.interpolateTurbo,
-        "RdYlBu":d3.interpolateRdYlBu};
+        "BuYlRd":d3.interpolateRdYlBu};
         // this.colorScale = d3.scaleLinear();
         this.colorScale = d3.scaleSequential(d3.interpolateSpectral);
 
@@ -74,8 +74,8 @@ class Graph{
         this.color_functions();
         this.size_functions();
         this.select_view();
-        // this.draw_mapper();
-        this.draw_mapper_fd();
+        this.draw_mapper();
+        // this.draw_mapper_fd();
         this.selection_nodes();
 
         this.layout_alg = "Force directed layout";
@@ -150,11 +150,12 @@ class Graph{
         
         map_dropdown.onchange = function(){
             map = map_dropdown.options[map_dropdown.selectedIndex].text;
+            that.color_map = map;
             if(that.COLORMAPS[map]){
                 console.log(map)
                 if(map === "turbo"){
                     that.colorScale = d3.scaleSequential(d3.interpolateTurbo);
-                } else if(map === "RdYlBu"){
+                } else if(map === "BuYlRd"){
                     that.colorScale = d3.scaleSequential(d3.interpolateRdYlBu);
                 } else if(map === "spectral"){
                     that.colorScale = d3.scaleSequential(d3.interpolateSpectral);
@@ -225,7 +226,7 @@ class Graph{
         min_circle.append("text")
             .attr("x", -3*size_scale.range()[0]/2)
             .attr("y", size_scale.range()[1]+margin)
-            .text(f(size_scale.range()[0]));
+            .text(f(size_scale.domain()[0]));
 
         max_circle.append("circle")
             .attr("r", size_scale.range()[1])
@@ -234,7 +235,7 @@ class Graph{
         max_circle.append("text")
             .attr("x", -size_scale.range()[1])
             .attr("y", size_scale.range()[1]+margin)
-            .text(f(size_scale.range()[1]));
+            .text(f(size_scale.domain()[1]));
 
 
     }
@@ -255,6 +256,10 @@ class Graph{
 
         // axis
         let tickValues = [axisDomain[0], d3.mean(axisDomain), axisDomain[1]];
+        if(this.color_map === "BuYlRd" || this.color_map === "spectral"){
+            axisDomain = axisDomain.reverse();
+            tickValues = [axisDomain[1], d3.mean(axisDomain), axisDomain[0]];
+        }
         let axisScale = d3.scaleLinear().domain(axisDomain).range([axisMargin, width - axisMargin*3]);
         let axis = d3.axisBottom(axisScale).tickValues(tickValues);
 
@@ -413,7 +418,7 @@ class Graph{
         })
         min_val = Math.min(0, min_val);
         let hist_scale = d3.scaleLinear()
-            .domain([min_val, max_val])
+            .domain([0, max_val])
             .range([0, this.hist_width-this.hist_margin.left*10]);
         return hist_scale
     }
@@ -428,6 +433,7 @@ class Graph{
         $('#color-function-values-container').append('<select class="custom-select"  name="color_function_values" id="color_function_values"></select>');
         $('#color-function-maps-container').append('<select class="custom-select"  name="color_function_maps" id="color_function_maps"></select>');
         $('#color-legend-svg').remove();
+        $('#size-legend-svg').remove();
     }
 
     selection_nodes(){
@@ -522,7 +528,13 @@ class Graph{
                     .classed("hist_value", true)
                     .attr("x", this.hist_margin.left)
                     .attr("y", j*(this.hist_margin.between+this.hist_margin.bar_height)+this.hist_margin.top)
-                    .text(Math.round(avgs[j].value*100)/100);
+                    .text(()=>{
+                        if(avgs[j].value<0){
+                            return "|-"+Math.abs(Math.round(avgs[j].value*100)/100)+"|";
+                        } else{
+                            return Math.round(avgs[j].value*100)/100;
+                        }
+                    });
 
                 hist_svg.append("rect")
                     .classed("hist_bar", true)
@@ -530,7 +542,7 @@ class Graph{
                     .attr("y",j*(this.hist_margin.between+this.hist_margin.bar_height)+this.hist_margin.top)
                     .attr("height", 5)
                     // .attr("width", this.hist_scale[avgs[j].key](avgs[j].value))
-                    .attr("width", this.hist_scale(avgs[j].value))
+                    .attr("width", this.hist_scale(Math.abs(avgs[j].value)))
                     .attr("fill", colorScale(j));
                 
                 hist_svg.append("text")
@@ -880,7 +892,7 @@ class Graph{
         })
 
         let selected_lens = 'DAP';
-        // let selected_lens = 'x';
+        // let selected_lens = 'y';
 
         let margin = 40;
         let lens_values = this.nodes.map(d=>d.lens_avg[selected_lens]);
@@ -1169,8 +1181,13 @@ class Graph{
                 }
             })
         }
+        if(this.color_map === "BuYlRd" || this.color_map === "spectral"){
+            return [max_val,min_val];
+        }
         
         return [min_val,max_val];
+        // return [min_val,max_val];
+        // return [max_val,min_val];
     }
 
     fill_vertex(col_key){
@@ -1213,7 +1230,10 @@ class Graph{
         d3.selectAll(".viewer-graph__vertex").attr("fill", "#fff");
         d3.selectAll(".viewer-graph__label").attr("fill", "#555");
         let color_categorical = d3.scaleOrdinal(d3.schemeCategory10);
-        let color_dict = {'KS; A':'#1f77b4', 'KS; B':'#ff7f0e', 'NE; A':'#2ca02c', 'NE; B':'#d62728'};
+        // let color_dict = {'KS; A':'#1f77b4', 'KS; B':'#ff7f0e', 'NE; A':'#2ca02c', 'NE; B':'#d62728'};
+        let color_dict = {'KS; B':'#ff7f0e', 'NE; B':'#1f77b4'};
+
+        // let color_dict = {};
         // // get # catogories
         // this.nodes.forEach(node=>{
         //     for(let c in node.categorical_cols_summary[col_key]){
@@ -1253,16 +1273,16 @@ class Graph{
                 p.category_id = c;
                 p.value = node.categorical_cols_summary[col_key][c];
                 p.node_id = node.id;
-                p.color = color_dict[c]
-                // if(Object.keys(color_dict).indexOf(c)!=-1){
-                // // if(color_dict[c]!=""){
-                //     p.color = color_dict[c];
-                // } else {
-                //     p.color = color_categorical(idx);
-                //     // p.color = d3.interpolateRainbow((idx+1)/Object.keys(color_dict).length);
-                //     idx += 1;
-                //     color_dict[c] = p.color;
-                // }
+                // p.color = color_dict[c]
+                if(Object.keys(color_dict).indexOf(c)!=-1){
+                // if(color_dict[c]!=""){
+                    p.color = color_dict[c];
+                } else {
+                    p.color = color_categorical(idx);
+                    // p.color = d3.interpolateRainbow((idx+1)/Object.keys(color_dict).length);
+                    idx += 1;
+                    color_dict[c] = p.color;
+                }
                 pie_data.push(p);
             }
             if(pie_data.length > 16){

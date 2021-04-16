@@ -6,9 +6,32 @@
             "id":"logistic_regression",
             "function-name": "statsmodels.api.Logit",
             "function-parameters":{},
-            "input-variables":{"dependent":"Location_binary", "independent":["Temperature", "Solar.Rad", "Humidity", "Rainfall"]},
+            "input-variables":{"dependent":"if_anomaly", "independent":["DAP", "Height-Diff", "Precipitation", "Humidity", "SolarRadiation", "GDD"]},
             "module-type": "supervised_learning",
             "components": ["table"]
+
+        },
+        {
+            "name": "Feature Selection",
+            "id":"feature_selection",
+            "function-name": "",
+            "function-parameters":{}
+
+        },
+        {
+            "name": "Scatter Plot",
+            "id":"scatter_plot",
+            "function-name": "",
+            "function-parameters":{},
+            "components": ["scatter plot"]
+
+        },
+        {
+            "name": "tSNE",
+            "id":"tsne",
+            "function-name": "",
+            "function-parameters":{},
+            "components": ["scatter plot"]
 
         }
         

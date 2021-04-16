@@ -23,6 +23,9 @@ from sklearn.neighbors import KernelDensity
 from scipy.spatial import distance
 from sklearn.cluster import KMeans
 import importlib
+from sklearn.svm import LinearSVC
+from sklearn.feature_selection import SelectFromModel
+from sklearn.manifold import TSNE
 
 
 @app.route('/')
@@ -217,7 +220,7 @@ def linear_regression():
     for i in range(conf_int.shape[0]):
         conf_int_new.append(list(conf_int[i,:]))
     print(result.summary())
-    return jsonify(params=list(result.params), pvalues=list(result.pvalues), conf_int=conf_int_new, stderr=list(result.bse))
+    return jsonify(params=list(result.params), pvalues=list(result.pvalues), conf_int=conf_int_new, stderr=list(result.bse), rsquared=result.rsquared, fvalue=result.f_pvalue, rsquared_adj=result.rsquared_adj)
 
 @app.route('/pca', methods=['POST','GET'])
 def pca():
@@ -226,11 +229,12 @@ def pca():
     n_components = 2
     '''
     selected_nodes = json.loads(request.form.get('data'))['nodes']
+    color_col = json.loads(request.form.get('data'))['color_col']
     print(selected_nodes)
     data = pd.read_csv(APP_STATIC+"/uploads/processed_data.csv")
     with open(APP_STATIC+"/uploads/cols_info.json") as f:
         cols_dict = json.load(f)
-    cols = cols_dict['cols_numerical']
+    cols = json.loads(request.form.get('data'))['cols']
     print(cols)
     with open(APP_STATIC+"/uploads/nodes_detail.json") as f:
         nodes_detail = json.load(f)
@@ -242,7 +246,9 @@ def pca():
         data = data.iloc[selected_rows, :]
         data.index = range(len(data))
     pca = PCA(n_components=2)
-    data_new = pca.fit_transform(data.loc[:,cols])
+    scaler = MinMaxScaler()
+    data_new = scaler.fit_transform(data.loc[:,cols])
+    data_new = pca.fit_transform(data_new)
     data_new = pd.DataFrame(data_new)
     data_new.columns = ['pc1', 'pc2']
     print(data.shape)
@@ -253,6 +259,8 @@ def pca():
     else:
         # data_new['kmeans_cluster'] = KMeans(n_clusters=10, random_state=0).fit(data_new).labels_
         data_new['kmeans_cluster'] = KMeans(n_clusters=6, random_state=0).fit(data_new).labels_
+    if color_col in cols_dict['cols_categorical'] or color_col in cols_dict['cols_numerical']:
+        data_new['color_col'] = data[color_col]
     data_new = data_new.to_json(orient='records')
     return jsonify(pca=data_new)
 
@@ -494,9 +502,9 @@ def module_computing():
     data, cols = get_selected_data(selected_nodes)
     module_info = json_data['module_info']
     data_new = call_module_function(data, cols, module_info)
-    data_new['kmeans_cluster'] = KMeans(n_clusters=4, random_state=0).fit(data_new).labels_
-    data_new = data_new.to_json(orient='records')
-    return jsonify(module_result=data_new)
+    # data_new['kmeans_cluster'] = KMeans(n_clusters=4, random_state=0).fit(data_new).labels_
+    # data_new = data_new.to_json(orient='records')
+    # return jsonify(module_result=data_new)
     return data_new
     # kNN graph
     # from pynndescent import NNDescent
@@ -537,5 +545,125 @@ def call_module_function(data, cols, module_info):
         for i in range(conf_int.shape[0]):
             conf_int_new.append(list(conf_int[i,:]))
         print(result.summary())
+        # # cross validation
+        # from sklearn.linear_model import LogisticRegression
+        # from sklearn.model_selection import cross_validate
+        # clf = LogisticRegression(random_state=0).fit(X, y)
+        # scores = cross_validate(clf, X, y)
+        # test_scores = scores['test_score']
+        # data_new = jsonify(params=list(result.params), pvalues=list(result.pvalues), conf_int=conf_int_new, stderr=list(result.bse), llr_pvalue=result.llr_pvalue, test_scores=list(test_scores), y_name=module_info['input-variables']['dependent'], X_names=module_info['input-variables']['independent'])
         data_new = jsonify(params=list(result.params), pvalues=list(result.pvalues), conf_int=conf_int_new, stderr=list(result.bse))
     return data_new
+
+@app.route('/export_graph', methods=['POST','GET'])
+def export_graph():
+    jsdata = request.form.get('javascript_data')
+    jsdata1 = json.loads(jsdata)
+    if jsdata1["filename"] == "":
+        filename = path.join(APP_STATIC,"downloads/export.json")
+    else: filename = path.join(APP_STATIC,"downloads/",jsdata1["filename"]+".json")
+    with open(filename,"w") as outfile:
+        json.dump(jsdata1,outfile)
+    outfile.close()
+    return jsdata
+
+@app.route('/export_clusters', methods=['POST','GET'])
+def export_clusters():
+    jsdata = request.form.get('javascript_data')
+    jsdata1 = json.loads(jsdata)
+    
+    # if jsdata1["filename"] == "":
+        # filename = path.join(APP_STATIC,"downloads/export.json")
+    # else: filename = path.join(APP_STATIC,"downloads/",jsdata1["filename"]+".json")
+    with open(filename,"w") as outfile:
+        json.dump(jsdata1,outfile)
+    outfile.close()
+    return jsdata
+
+@app.route('/feature_selection', methods=['POST','GET'])
+def feature_selection():
+    jsdata = json.loads(request.form.get('data'))
+    print(jsdata)
+    selected_nodes = jsdata['nodes']
+    y_name = jsdata['y']
+    X_names = jsdata['X']
+    with open(APP_STATIC+"/uploads/nodes_detail.json") as f:
+        nodes_detail = json.load(f)
+    data = pd.read_csv(APP_STATIC+"/uploads/processed_data.csv")
+    if len(selected_nodes) > 0:
+        selected_rows = []
+        for node in selected_nodes:
+            selected_rows += nodes_detail[node]
+        selected_rows = list(set(selected_rows))
+        data = data.iloc[selected_rows, :]
+        data.index = range(len(data))
+    y = data.loc[:,y_name]
+    X = data.loc[:,X_names]
+    lsvc = LinearSVC(C=1, dual=False).fit(X, y)
+    model = SelectFromModel(lsvc, prefit=True)
+    feature_idx = model.get_support()
+    feature_name= list(X.columns[feature_idx])
+    return jsonify(feature_names=feature_name)
+
+
+@app.route('/module_scatter_plot', methods=['POST','GET'])
+def module_scatter_plot():
+    jsdata = json.loads(request.form.get('data'))
+    selected_nodes = jsdata['nodes']
+    x_name = jsdata['x_name']
+    y_name = jsdata['y_name']
+    color_name = jsdata['color_name']
+    with open(APP_STATIC+"/uploads/nodes_detail.json") as f:
+        nodes_detail = json.load(f)
+    data = pd.read_csv(APP_STATIC+"/uploads/processed_data.csv")
+    if len(selected_nodes) > 0:
+        selected_rows = []
+        for node in selected_nodes:
+            selected_rows += nodes_detail[node]
+        selected_rows = list(set(selected_rows))
+        data = data.iloc[selected_rows, :]
+        data.index = range(len(data))
+    x_col = data.loc[:,x_name]
+    y_col = data.loc[:,y_name]
+    color_col = data.loc[:, color_name]
+    return jsonify(x_name=x_name, x_col=list(x_col), y_name=y_name, y_col=list(y_col), color_name=color_name, color_col=list(color_col))
+
+@app.route('/module_tsne', methods=['POST','GET'])
+def module_tsne():
+    jsdata = json.loads(request.form.get('data'))
+    selected_nodes = jsdata['nodes']
+    color_col = jsdata['color_col']
+    
+
+    data = pd.read_csv(APP_STATIC+"/uploads/processed_data.csv")
+    with open(APP_STATIC+"/uploads/cols_info.json") as f:
+        cols_dict = json.load(f)
+    cols = jsdata['cols']
+    print(cols)
+    
+    with open(APP_STATIC+"/uploads/nodes_detail.json") as f:
+        nodes_detail = json.load(f)
+    if len(selected_nodes) > 0:
+        selected_rows = []
+        for node in selected_nodes:
+            selected_rows += nodes_detail[node]
+        selected_rows = list(set(selected_rows))
+        data = data.iloc[selected_rows, :]
+        data.index = range(len(data))
+
+    module_info = jsdata['module_info']
+    tsne = TSNE(n_components=2)
+    scaler = MinMaxScaler()
+    data_new = scaler.fit_transform(data.loc[:,cols])
+    data_new = tsne.fit_transform(data_new)
+    data_new = pd.DataFrame(data_new)
+    data_new.columns = ['col1', 'col2']
+    if len(selected_nodes)>0:
+        data_new['kmeans_cluster'] = KMeans(n_clusters=min(len(selected_nodes), 6), random_state=0).fit(data_new).labels_
+    else:
+        # data_new['kmeans_cluster'] = KMeans(n_clusters=10, random_state=0).fit(data_new).labels_
+        data_new['kmeans_cluster'] = KMeans(n_clusters=6, random_state=0).fit(data_new).labels_
+    if color_col in cols_dict['cols_categorical'] or color_col in cols_dict['cols_numerical']:
+        data_new['color_col'] = data[color_col]
+    data_new = data_new.to_json(orient='records')
+    return jsonify(tsne_result=data_new)

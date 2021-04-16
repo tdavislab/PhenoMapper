@@ -136,6 +136,8 @@ class Regression{
         $('#regression-result').remove();
         $('#regression-result-constant').remove();
         $('.reg-result_title').remove();
+        $('#regression-constant-line').remove();
+        d3.selectAll(".reg_vals").remove();
     }
 
     draw_reg_result(res){
@@ -197,25 +199,28 @@ class Regression{
             .classed("indep_vars_selected", true)
             .html(d=>d);
 
+        let f = d3.format(".3f");
+
         let cg = coef_ul.selectAll("li").data(res.params.slice(1));
         cg.exit().remove();
         cg = cg.enter().append("ul").merge(cg)
-            .html(d=>Math.round(d*1000)/1000);
+            .html(d=>f(d));
 
         let sg = std_ul.selectAll("li").data(res.stderr.slice(1));
         sg.exit().remove();
         sg = sg.enter().append("ul").merge(sg)
-            .html(d=>Math.round(d*1000)/1000);
+            .html(d=>f(d));
 
         let pg = pvalue_ul.selectAll("li").data(res.pvalues.slice(1));
         pg.exit().remove();
         pg = pg.enter().append("li").merge(pg)
-            .html(d=>Math.round(d*1000)/1000);
+            .html(d=>f(d));
 
         d3.select("#regression-panel").select(".block_body-inner").append("div")
             .style("padding-left","45")
             .style("padding-right","45")
             .style("border-top","1px solid #D3DBE2")
+            .attr("id", "regression-constant-line");
         let constant_container = d3.select("#regression-panel").select(".block_body-inner").append("div")
             .classed("row", true)
             .attr("id","regression-result-constant")
@@ -229,16 +234,48 @@ class Regression{
         
         let coef_container_c = constant_container.append("div")
             .classed("col-sm-2", true);
-        coef_container_c.append("ul").append("li").html(Math.round(res.params[0]*1000)/1000);
+        coef_container_c.append("ul").append("li").html(f(res.params[0]));
 
         let std_container_c = constant_container.append("div")
             .classed("col-sm-3", true);
-        std_container_c.append("ul").append("li").html(Math.round(res.stderr[0]*1000)/1000);
+        std_container_c.append("ul").append("li").html(f(res.stderr[0]));
 
         let pvalue_container_c = constant_container.append("div")
             .classed("col-sm-4", true);
-        pvalue_container_c.append("ul").append("li").html(Math.round(res.pvalues[0]*1000)/1000);
+        pvalue_container_c.append("ul").append("li").html(f(res.pvalues[0]));
 
+        let rsquared_container = d3.select("#regression-panel").select(".block_body-inner").append("div")
+            .classed("reg_vals", true)
+            .classed("row", true);
+        rsquared_container.append("div")
+            .classed("col-sm-3", true)
+            .style("font-weight", "bold")
+            .html("R-squared");
+        rsquared_container.append("div")
+            .classed("col-sm-4", true)
+            .html(f(res.rsquared));
+        
+        let rsquared_adj_container = d3.select("#regression-panel").select(".block_body-inner").append("div")
+            .classed("reg_vals", true)
+            .classed("row", true);
+        rsquared_adj_container.append("div")
+            .classed("col-sm-3", true)
+            .style("font-weight", "bold")
+            .html("Adj. R-squared");
+        rsquared_adj_container.append("div")
+            .classed("col-sm-4", true)
+            .html(f(res.rsquared_adj));
+
+        let fvalue_container = d3.select("#regression-panel").select(".block_body-inner").append("div")
+            .classed("reg_vals", true)
+            .classed("row", true);
+        fvalue_container.append("div")
+            .classed("col-sm-3", true)
+            .style("font-weight", "bold")
+            .html("F-value");
+        fvalue_container.append("div")
+            .classed("col-sm-4", true)
+            .html(f(res.fvalue));
         
     }
 }

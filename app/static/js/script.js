@@ -272,6 +272,13 @@ d3.select("#files")
                 success: function (response) {
                     response = JSON.parse(response);
                     that.side_bar = new DataLoader(response.columns, response.categorical_columns, response.other_columns);
+                    that.regression = new Regression(that.side_bar.all_cols);
+                    if(that.feature_module){
+                        feature_module.add_feature_selection_columns(that.side_bar.categorical_cols, that.side_bar.all_cols);
+                    } 
+                    if(that.scatter_plot_module){
+                        scatter_plot_module.add_scatter_plot_columns(that.side_bar.categorical_cols, that.side_bar.all_cols);
+                    }
                 },
                 error: function (error) {
                     console.log("error",error);
@@ -315,7 +322,6 @@ d3.select("#mapper_loader")
             }, function(res){
                 console.log(res);
                 that.graph = new Graph(res.mapper, that.side_bar.all_cols, res.connected_components, that.side_bar.categorical_cols, that.side_bar.other_cols);
-                that.regression = new Regression(that.side_bar.all_cols);
             })
         } else{
             alert("Please import a dataset frist!")
@@ -348,7 +354,7 @@ d3.select("#pca")
             //     selected_nodes = that.graph.nodes.map(d=>d.id);
             // } 
             $.post("/pca", {
-                data: JSON.stringify({"nodes":selected_nodes})
+                data: JSON.stringify({"nodes":selected_nodes, "cols":that.side_bar.selected_cols, "color_col":"if_anomaly"})
             }, function(res){
                 that.pca = new PCA(that.side_bar.selected_cols, selected_nodes);
                 that.pca.draw_PCA(JSON.parse(res.pca));
@@ -454,22 +460,77 @@ $.post("/module_extension",{
         console.log(modules)
         modules.forEach(m_info => {
             let module_i = new New_Module(m_info);
+            if(m_info.id === "feature_selection"){
+                that.feature_module = module_i;
+            } else if (m_info.id === "scatter_plot"){
+                that.scatter_plot_module = module_i;
+            }
             d3.select("#"+module_i.module_id+"_button")
                 .on("click", ()=>{
                     console.log(module_i.module_name)
                     if(that.graph){
                         let selected_nodes = [...that.graph.selected_nodes];
                         console.log(selected_nodes);
-                        $.post("/module_computing",{
-                            data: JSON.stringify({"nodes":selected_nodes, "module_info": m_info})
-                        }, function(res){
-                            console.log(res)
-                            module_i.data = res.s_dist.map(x=>+x);
-                            // module_i.data = JSON.parse(res.module_result);
-                            module_i.components.forEach(c=>{
-                                module_i.add_component(c);
+                        if(module_i.module_id === "feature_selection"){
+                            $.post("/feature_selection",{
+                                data: JSON.stringify({"nodes":selected_nodes, "module_info": m_info, "y":module_i.y, "X":module_i.selected_cols.slice(1)})
+                            }, function(res){
+                                console.log(res)
+                                module_i.feature_names = res.feature_names;
+                                module_i.draw_feature_names();
+                                // module_i.data = res.s_dist.map(x=>+x);
+                                // module_i.data = JSON.parse(res.module_result);
+                                // module_i.components.forEach(c=>{
+                                //     module_i.add_component(c);
+                                // })
                             })
-                        })
+                        } else if(module_i.module_id === "scatter_plot"){
+                            console.log("scatter_plot")
+                            let x_dropdown = document.getElementById("scatter_plot_x_selection");
+                            let x_name = x_dropdown.options[x_dropdown.selectedIndex].text;
+                            let y_dropdown = document.getElementById("scatter_plot_y_selection");
+                            let y_name = y_dropdown.options[y_dropdown.selectedIndex].text;
+                            let color_dropdown = document.getElementById("scatter_plot_color_selection");
+                            let color_name = color_dropdown.options[color_dropdown.selectedIndex].text;
+                            $.post("/module_scatter_plot",{
+                                data: JSON.stringify({"nodes":selected_nodes, "module_info": m_info, "x_name":x_name, "y_name":y_name, "color_name":color_name})
+                            }, function(res){
+                                console.log(res)
+                                module_i.data = res;
+                                module_i.components.forEach(c=>{
+                                    module_i.add_component(c);
+                                })
+                            })
+                        }
+                        else if(module_i.module_id === "tsne"){
+                            $.post("/module_tsne",{
+                                data: JSON.stringify({"nodes":selected_nodes, "module_info": m_info, "color_col":"if_anomaly", "cols":that.side_bar.selected_cols})
+                            }, function(res){
+                                module_i.data = JSON.parse(res.tsne_result)
+                                module_i.draw_tsne_result();
+                                // module_i.data = res.s_dist.map(x=>+x);
+                                // module_i.data = JSON.parse(res.module_result);
+                                // module_i.data = res;
+                                // module_i.components.forEach(c=>{
+                                //     module_i.add_component(c);
+                                // })
+                            })
+                        }
+
+                        else {
+                            $.post("/module_computing",{
+                                data: JSON.stringify({"nodes":selected_nodes, "module_info": m_info})
+                            }, function(res){
+                                console.log(res)
+                                // module_i.data = res.s_dist.map(x=>+x);
+                                // module_i.data = JSON.parse(res.module_result);
+                                module_i.data = res;
+                                module_i.components.forEach(c=>{
+                                    module_i.add_component(c);
+                                })
+                            })
+                        }
+                        
                     }
                 });
         })    
@@ -480,20 +541,35 @@ $.post("/module_extension",{
 // Export
 $("#export-clusters").click(function(){
     // let v = $("#exFilename").val();
-    let clusters;
-    $.post( "/export_clusters", {
-        javascript_data: JSON.stringify(clusters)
-    });
-   
-    alert("Clusters saved");
+    if(that.graph){
+        // let clusters;
+        $.post( "/export_clusters", {
+            javascript_data: JSON.stringify(that.graph.connected_components)
+        });
+       
+        alert("Clusters saved");
+    } else {
+        alert("No graph to save")
+    }
+    
 })
 
 $("#export-mapper-graph").click(function(){
     // let v = $("#exFilename").val();
-    let mapper_graph;
-    $.post( "/export_graph", {
-        javascript_data: JSON.stringify(mapper_graph)
-    });
+    // let mapper_graph;
+    // $.post( "/export_graph", {
+    //     javascript_data: JSON.stringify(mapper_graph)
+    // });
    
-    alert("Mapper graph saved");
+    // alert("Mapper graph saved");
+    if(that.graph){
+        // let clusters;
+        $.post( "/export_clusters", {
+            javascript_data: JSON.stringify(that.graph.connected_components)
+        });
+       
+        alert("Clusters saved");
+    } else {
+        alert("No graph to save")
+    }
 })
