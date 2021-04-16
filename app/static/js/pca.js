@@ -34,10 +34,6 @@ class PCA{
         pca_svg.append("g").attr("id","axis_group");
         pca_svg.append("g").attr("id", "circle_group");
 
-        // let jitter_x = (xScale.domain()[1] - xScale.domain()[0])/100;
-        // let jitter_y = (yScale.domain()[1] - yScale.domain()[0])/100;
-        // console.log(xScale.domain())
-
         let cg = d3.select("#circle_group").selectAll("circle").data(points_dict);
         cg.exit().remove();
         cg = cg.enter().append("circle").merge(cg)
