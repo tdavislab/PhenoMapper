@@ -29,6 +29,9 @@ To perform linear regression, please also make sure you have [statsmodels](https
 pip install statsmodels
 ```
 
+## Interface
+![Screenshot of interface](app/static/assets/interface.png)
+
 <!-- ## Loading a dataset
 When loading a dataset into the interface, please make sure to put the data file to be loaded in the folder ``app/static/uploads/``. -->
 
