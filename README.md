@@ -46,6 +46,42 @@ Please refer to a user-guide [here](CLI_README.md) for the command-line API.
 
 This project is licensed under the MIT License - see the `LICENSE` file for details. -->
 
+## Data Format
+
+### Importing raw data
+
+To compute a mapper graph, point cloud data can be input in CSV format.
+
+The following is an example of an input CSV file.
+
+```bash
+x,y,z
+0.013,0.275,0.465
+0.216,0.981,-0.424
+0.804,-0.424,0.217
+...
+```
+
+### Importing a pre-computed mapper graph
+Using the command-line API, users can compute mapper graphs offline. 
+
+The outputting mapper graph will be saved in JSON format, which can be loaded in the GUI.
+
+The following is an example of a mapper graph file.
+
+```bash
+{
+    "nodes":{
+        "cube0_cluster0": [19, 21, 66],
+        ...
+    },
+    "edges":{
+        "cube0_cluster0": ["cube1_cluster0"],
+        ...
+    }
+}
+```
+
 ## Contributing
 
 Pull requests are welcomed. 
