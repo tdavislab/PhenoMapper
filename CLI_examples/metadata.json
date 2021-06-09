@@ -1,0 +1,1 @@
+{"data": "two-circle.csv", "intervals": "10:50:10", "overlaps": "25:35:5", "filter": "l2norm", "normalization": null, "dbscan_eps": 0.5, "dbscan_numpts": 5}
