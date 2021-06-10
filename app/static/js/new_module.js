@@ -119,6 +119,17 @@ class New_Module{
     }
 
     draw_feature_names(){
+        let f = d3.format(".3f");
+        let score_div = this.panel_body_inner.append("div").classed("row", true)
+            .style("margin", "2px")
+            .style("margin-top", "10px")
+            .style("padding-top", "5px")
+            .style("padding-bottom", "0px")
+            .style("padding-left", "0px")
+            .style("border-top", "1px solid #D3DBE2")
+            .style("text-align", "left");
+        score_div.append("div").classed("col-6", true).html("Mean Accuracy").style("padding-left", "0px").style("font-weight", "bold");
+        score_div.append("div").classed("col-3", true).html(f(this.svc_score));
         this.panel_body_inner.append("div").classed("reg-result_title",true).append("h6").html("Selected Features");
         let result_container = this.panel_body_inner.append("div").append("ul");
         result_container.selectAll("li").data(this.feature_names)
@@ -481,6 +492,9 @@ class New_Module{
             .call(d3.axisLeft(yScale).ticks(5))
             .classed("axis_line", true)
             .attr("transform", "translate("+margin.left+",0)");
+
+        // legend
+
 
     }
 }

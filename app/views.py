@@ -603,7 +603,8 @@ def feature_selection():
     model = SelectFromModel(lsvc, prefit=True)
     feature_idx = model.get_support()
     feature_name= list(X.columns[feature_idx])
-    return jsonify(feature_names=feature_name)
+    svc_score = lsvc.score(X,y)
+    return jsonify(feature_names=feature_name, svc_score=svc_score)
 
 
 @app.route('/module_scatter_plot', methods=['POST','GET'])

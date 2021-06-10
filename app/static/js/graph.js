@@ -1231,7 +1231,7 @@ class Graph{
         d3.selectAll(".viewer-graph__label").attr("fill", "#555");
         let color_categorical = d3.scaleOrdinal(d3.schemeCategory10);
         // let color_dict = {'KS; A':'#1f77b4', 'KS; B':'#ff7f0e', 'NE; A':'#2ca02c', 'NE; B':'#d62728'};
-        let color_dict = {'KS; B':'#ff7f0e', 'NE; B':'#1f77b4'};
+        // let color_dict = {'KS; B':'#ff7f0e', 'NE; B':'#1f77b4'};
 
         // let color_dict = {};
         // // get # catogories

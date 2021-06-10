@@ -477,6 +477,7 @@ $.post("/module_extension",{
                             }, function(res){
                                 console.log(res)
                                 module_i.feature_names = res.feature_names;
+                                module_i.svc_score = res.svc_score
                                 module_i.draw_feature_names();
                                 // module_i.data = res.s_dist.map(x=>+x);
                                 // module_i.data = JSON.parse(res.module_result);
@@ -504,7 +505,7 @@ $.post("/module_extension",{
                         }
                         else if(module_i.module_id === "tsne"){
                             $.post("/module_tsne",{
-                                data: JSON.stringify({"nodes":selected_nodes, "module_info": m_info, "color_col":"if_anomaly", "cols":that.side_bar.selected_cols})
+                                data: JSON.stringify({"nodes":selected_nodes, "module_info": m_info, "color_col":"types", "cols":that.side_bar.selected_cols})
                             }, function(res){
                                 module_i.data = JSON.parse(res.tsne_result)
                                 module_i.draw_tsne_result();
