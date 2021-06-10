@@ -63,7 +63,7 @@ x,y,z
 ```
 
 ### Importing a pre-computed mapper graph
-Using the command-line API, users can compute mapper graphs offline. 
+Using the command-line API, mapper graphs can be computed offline given a point cloud datset. 
 
 The outputting mapper graph will be saved in JSON format, which can be loaded in the GUI.
 
@@ -81,6 +81,37 @@ The following is an example of a mapper graph file.
     }
 }
 ```
+
+## Extendability
+
+### Novice user mode
+Under Novice user mode, the new modules can be added by describing the module information within the `app/static/uploads/new_modules.json`. Currently, the tool allows the addition of supervised and unsupervised learning algorithms that are available via `scikit-learn`.
+
+Here is an example of adding a t-SNE module.
+
+```bash
+{
+    "modules":
+    [
+        {
+            "name":"TSNE",
+            "function-name":"sklearn.manifold.TSNE",
+            "function-parameters":{
+                "n_components":2
+            },
+            "module-type":"unsupervised_learning",
+            "components":["scatter plot"]
+        }
+    ]
+}
+```
+
+### Expert user mode
+For expert users with programming experience, we provide a template function `call_module_function` in `app/views.py`. A new module can be added by directly modifying the function. It supports customizable and multistep analysis pipelines. 
+
+We also provide a template class `app/static/js/new_module.js` in JavaScript for creating new visual components using `D3.js`.
+
+The styles of visual components are changed via the CSS file `app/static/css/styles.css`.
 
 ## Contributing
 
