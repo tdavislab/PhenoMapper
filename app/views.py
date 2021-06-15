@@ -215,12 +215,15 @@ def linear_regression():
     reg = sm.OLS(y, X2)
     print(y,X2)
     result = reg.fit()
+    ypred = result.predict(X2)
+    influence = result.get_influence()
+    std_residuals = influence.resid_studentized_internal
     conf_int = np.array(result.conf_int())
     conf_int_new = []
     for i in range(conf_int.shape[0]):
         conf_int_new.append(list(conf_int[i,:]))
     print(result.summary())
-    return jsonify(params=list(result.params), pvalues=list(result.pvalues), conf_int=conf_int_new, stderr=list(result.bse), rsquared=result.rsquared, fvalue=result.f_pvalue, rsquared_adj=result.rsquared_adj)
+    return jsonify(params=list(result.params), pvalues=list(result.pvalues), conf_int=conf_int_new, stderr=list(result.bse), rsquared=result.rsquared, fvalue=result.f_pvalue, rsquared_adj=result.rsquared_adj, y_actual=list(y), y_predicted=list(ypred), std_residuals=list(std_residuals))
 
 @app.route('/pca', methods=['POST','GET'])
 def pca():

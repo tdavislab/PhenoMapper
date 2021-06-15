@@ -2,6 +2,8 @@
 
 PhenoMapper is an extension of [Mapper Interactive](https://github.com/MapperInteractive/MapperInteractive), which is a web-based framework for interactive analysis and visualization of high-dimensional point cloud data built upon the mapper algorithm.
 
+## Cautionary Message
+
 ## Installation
 
 ```bash
@@ -82,6 +84,36 @@ The following is an example of a mapper graph file.
 }
 ```
 
+## Exploratory analysis
+
+In the tool, we provide machine learning modules for futher exploring the input data. Currently, the tool allows to perform linear regression, logistic regression, PCA, t-SNE, and feature selection (based on linear SVC) on both the entire population or a selected subgroup of nodes. Moreover, the tool is designed for users to easily extend the framework to include machine learning modules available from Python libraries *scikit-learn* and *statsmodels*.
+
+### Warning message
+<span style="color:blue">Users should take it upon themselves to properly carry out the most appropriate statistical analysis of their datasets.</span>.
+
+### Model assumptions
+We list the model assumptions for each machine learning module. Before performing any kind of the exploratory analysis, please make sure the data meets the corresponding assumptions, otherwise, the fitted model might be less effective.
+
+* **Linear regression**: We don't make any additional assumptions for linear regression. The input data should satisfy the following four basic assumptions.
+    - Linearity: The relationship between the dependent variable *y* and independent variables *X* are likely to be linear.
+    - Homoscedasticity: The variance of residual is the same for any value of *X*.
+    - Independence: Observations should be independent of each other.
+    - Normality: For any fixed value of *X*, *y* is normally distributed.
+
+* **Logistic regression**:
+    - The dependent variable *y* should be binary.
+    - Independence: Observations should be independent of each other.
+
+* **PCA**:
+    - There is no unique variance, which means the total variance is equal to common variance.
+
+* **t-SNE**:
+    - According to the documentation from *scikit-learn*, it is highly recommended to use another dimensionality reduction method (e.g. PCA for dense data or TruncatedSVD for sparse data) to reduce the number of dimensions to a reasonable amount (e.g. 50) if the number of features is very high. (https://scikit-learn.org/stable/modules/generated/sklearn.manifold.TSNE.html)
+
+* **Linear SVC**
+    - The dependent variable *y* should be categorical.
+
+
 ## Extendability
 
 ### Novice user mode
@@ -121,4 +153,4 @@ Pull requests are welcomed.
 
 Pheno-Mapper: An Interactive Toolbox for the Visual Exploration of Phenomics Data.
 Youjia Zhou, Methun Kamruzzaman, Patrick Schnable, Bala Krishnamoorthy, Ananth Kalyanaraman, Bei Wang.\
-Submitted to ACM-BCB, 2021.
+*ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (ACM BCB)*, accepted, 2021.

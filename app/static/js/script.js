@@ -375,7 +375,7 @@ for(let i=0; i<coll.length; i++){
             if(block_body.id === "block_body_histogram"){
                 block_body.style.maxHeight = "500px";
             } else{
-                block_body.style.maxHeight = "1000px";
+                block_body.style.maxHeight = "1500px";
             }
         } 
     })

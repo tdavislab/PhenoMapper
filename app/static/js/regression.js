@@ -276,6 +276,198 @@ class Regression{
         fvalue_container.append("div")
             .classed("col-sm-4", true)
             .html(f(res.fvalue));
+
+        this.draw_predictions(res.y_actual, res.y_predicted);
+        this.draw_residuals(res.y_predicted, res.std_residuals);
         
+    }
+    draw_predictions(y_actual, y_pred){
+        $("#prediction_svg_container").remove();
+
+        let panel_body_inner = d3.select("#regression-panel").select(".block_body-inner");
+        let prediction_svg_container = panel_body_inner.append("div").attr("id", "prediction_svg_container")
+        prediction_svg_container.append("div")
+            .style("padding-left","45px")
+            .style("padding-right","45px")
+            .style("border-top","1px solid #D3DBE2")
+            .attr("id", "regression-constant-line");
+        prediction_svg_container.append("div").style("padding-top", "5px").append("h6").html("Predicted vs Actual");
+        let margin = {"left":55, "top":10, "right":10, "bottom":35};
+        let width = $(panel_body_inner.node()).width();
+        let height = width/5*3+5;
+
+        let x = y_pred;
+        let y = y_actual;
+
+        let all_vals = x.concat(y);
+
+        let xScale = d3.scaleLinear()
+            .domain([Math.min(...all_vals), Math.max(...all_vals)])
+            .range([margin.left, width-margin.right]);
+        
+        let yScale = d3.scaleLinear()
+            .domain([Math.min(...all_vals), Math.max(...all_vals)])
+            .range([height-margin.bottom, margin.top]);
+
+        let module_svg = prediction_svg_container.append("svg")
+            .attr("width", width)
+            .attr("height", height);
+        module_svg.append("g").attr("id", "regression_predictions_axis_group");
+        module_svg.append("g").attr("id", "regression_predictions_circle_group");
+
+        module_svg.append("line")
+            .attr("x1", margin.left)
+            .attr("y1", height-margin.bottom)
+            .attr("x2", width-margin.right)
+            .attr("y2", margin.top)
+            .attr("stroke", "grey")
+            .style("stroke-width", "2px")
+            .style("stroke-dasharray", ("3, 3"))
+            .style("opacity", 0.8)
+
+        let cg = d3.select("#regression_predictions_circle_group").selectAll("circle").data(x);
+        cg.exit().remove();
+        cg = cg.enter().append("circle").merge(cg)
+            .attr("cx", d=>xScale(d))
+            .attr("cy", (d,i)=>yScale(y[i]))
+            .attr("r", 2.5)
+            // .attr("r",1.8)
+            // .attr("fill", "orange")
+            .attr("fill", (d,i)=>{
+                // return color[this.data.color_col[i]];
+                return "#1f77b4";
+            })
+            .style("opacity", 0.6)
+
+         // x-axis
+         d3.select("#regression_predictions_axis_group").append("g") 
+            .call(d3.axisBottom(xScale).ticks(5)
+                    .tickFormat(d=>d3.format(".3f")(d))
+                )
+            .classed("axis_line", true)
+            .attr("transform", "translate(0,"+(height-margin.bottom)+")");
+        
+        d3.select("#regression_predictions_axis_group").append("text")             
+            .attr("transform",
+                  "translate(" + (width/2) + " ," + 
+                                 (height) + ")")
+            .style("text-anchor", "middle")
+            .style("font-size", "10px")
+            .style("font-weight", "bold")
+            .text("Predicted values");
+        
+        // y-axis
+        d3.select("#regression_predictions_axis_group").append("g")
+            .call(d3.axisLeft(yScale).ticks(5)
+                    .tickFormat(d=>d3.format(".3f")(d))
+                )
+            .classed("axis_line", true)
+            .attr("transform", "translate("+margin.left+",0)");
+
+        d3.select("#regression_predictions_axis_group").append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0)
+            .attr("x", -(height/2-margin.top))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .style("font-size", "10px")
+            .style("font-weight", "bold")
+            .text("Actual values"); 
+
+
+
+    }
+
+    draw_residuals(y_pred, std_residuals){
+        $("#residuals_svg_container").remove();
+        
+        let panel_body_inner = d3.select("#regression-panel").select(".block_body-inner");
+        let residuals_svg_container = panel_body_inner.append("div").attr("id", "residuals_svg_container");
+        residuals_svg_container.append("div")
+            .style("padding-left","45px")
+            .style("padding-right","45px")
+            .style("margin-top", "10px")
+            .style("border-top","1px solid #D3DBE2")
+            .attr("id", "regression-constant-line");
+        residuals_svg_container.append("div").style("padding-top", "5px").append("h6").html("Residuals");
+        let margin = {"left":55, "top":10, "right":10, "bottom":35};
+        let width = $(panel_body_inner.node()).width();
+        let height = width/5*3+5;
+
+        let x = y_pred;
+        let y = std_residuals;
+
+        let xScale = d3.scaleLinear()
+            .domain([Math.min(...x), Math.max(...x)])
+            .range([margin.left, width-margin.right]);
+        
+        let yScale = d3.scaleLinear()
+            .domain([Math.min(...y), Math.max(...y)])
+            .range([height-margin.bottom, margin.top]);
+
+        let module_svg = residuals_svg_container.append("svg")
+            .attr("width", width)
+            .attr("height", height);
+        module_svg.append("g").attr("id", "regression_residuals_axis_group");
+        module_svg.append("g").attr("id", "regression_residuals_circle_group");
+
+        module_svg.append("line")
+            .attr("x1", margin.left)
+            .attr("y1", yScale(0))
+            .attr("x2", width-margin.right)
+            .attr("y2", yScale(0))
+            .attr("stroke", "grey")
+            .style("stroke-width", "2px")
+            .style("stroke-dasharray", ("3, 3"))
+            .style("opacity", 0.8)
+
+        let cg = d3.select("#regression_residuals_axis_group").selectAll("circle").data(x);
+        cg.exit().remove();
+        cg = cg.enter().append("circle").merge(cg)
+            .attr("cx", d=>xScale(d))
+            .attr("cy", (d,i)=>yScale(y[i]))
+            .attr("r", 2.5)
+            // .attr("r",1.8)
+            // .attr("fill", "orange")
+            .attr("fill", (d,i)=>{
+                // return color[this.data.color_col[i]];
+                return "#1f77b4";
+            })
+            .style("opacity", 0.6);
+        
+        // x-axis
+        d3.select("#regression_residuals_axis_group").append("g") 
+            .call(d3.axisBottom(xScale).ticks(5)
+                    .tickFormat(d=>d3.format(".3f")(d))
+                )
+            .classed("axis_line", true)
+            .attr("transform", "translate(0,"+(height-margin.bottom)+")");
+        d3.select("#regression_residuals_axis_group").append("text")             
+            .attr("transform",
+                  "translate(" + (width/2) + " ," + 
+                                 (height) + ")")
+            .style("text-anchor", "middle")
+            .style("font-size", "10px")
+            .style("font-weight", "bold")
+            .text("Predicted values");
+    
+        // y-axis
+        d3.select("#regression_residuals_axis_group").append("g")
+            .call(d3.axisLeft(yScale).ticks(5)
+                    .tickFormat(d=>d3.format(".3f")(d))
+                )
+            .classed("axis_line", true)
+            .attr("transform", "translate("+margin.left+",0)");
+
+        d3.select("#regression_residuals_axis_group").append("text")
+            .attr("transform", "rotate(-90)")
+            .attr("y", 0)
+            .attr("x", -(height/2-margin.top))
+            .attr("dy", "1em")
+            .style("text-anchor", "middle")
+            .style("font-size", "10px")
+            .style("font-weight", "bold")
+            .text("Standardized Residuals");
+
     }
 }
