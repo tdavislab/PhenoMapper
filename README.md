@@ -153,4 +153,4 @@ Pull requests are welcomed.
 
 Pheno-Mapper: An Interactive Toolbox for the Visual Exploration of Phenomics Data.
 Youjia Zhou, Methun Kamruzzaman, Patrick Schnable, Bala Krishnamoorthy, Ananth Kalyanaraman, Bei Wang.\
-*ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (ACM BCB)*, accepted, 2021.
+*ACM Conference on Bioinformatics, Computational Biology, and Health Informatics (ACM BCB)*, 2021.
