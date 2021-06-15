@@ -89,7 +89,7 @@ The following is an example of a mapper graph file.
 In the tool, we provide machine learning modules for futher exploring the input data. Currently, the tool allows to perform linear regression, logistic regression, PCA, t-SNE, and feature selection (based on linear SVC) on both the entire population or a selected subgroup of nodes. Moreover, the tool is designed for users to easily extend the framework to include machine learning modules available from Python libraries *scikit-learn* and *statsmodels*.
 
 ### Warning message
-<span style="color:blue">Users should take it upon themselves to properly carry out the most appropriate statistical analysis of their datasets.</span>.
+<span style="color:blue">Users should take it upon themselves to properly carry out the most appropriate statistical analysis of their datasets.</span>
 
 ### Model assumptions
 We list the model assumptions for each machine learning module. Before performing any kind of the exploratory analysis, please make sure the data meets the corresponding assumptions, otherwise, the fitted model might be less effective.
