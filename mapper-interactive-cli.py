@@ -78,6 +78,7 @@ def wrangle_csv(df):
     3. If cols are non-numerical, check if cols are categorical
     '''
     newdf1 = df.to_numpy()[1:]
+    cols = df.columns
     rows2delete = np.array([])
     cols2delete = []
 

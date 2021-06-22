@@ -74,8 +74,8 @@ class Graph{
         this.color_functions();
         this.size_functions();
         this.select_view();
-        this.draw_mapper();
-        // this.draw_mapper_fd();
+        // this.draw_mapper();
+        this.draw_mapper_fd();
         this.selection_nodes();
 
         this.layout_alg = "Force directed layout";
@@ -1051,19 +1051,10 @@ class Graph{
         lg
             .classed("viewer-graph__edge",true)
             .attr("id",d=>"link"+d.source.id+"_"+d.target.id)
-            // .attr("x1", d => lens_scale(d.source.lens_avg[selected_lens]))
             .attr("x1", d => d.source.x)
             .attr("y1", d => d.source.y)
-            // .attr("x2", d => lens_scale(d.target.lens_avg[selected_lens]))
             .attr("x2", d => d.target.x)
             .attr("y2", d => d.target.y);
-
-        // simulation
-        //     .nodes(this.nodes)
-        //         .on("tick", ticked);
-
-        // simulation.force("link")
-        //     .links(this.links);
 
         let that = this;
         function ticked() {
@@ -1230,19 +1221,25 @@ class Graph{
         d3.selectAll(".viewer-graph__vertex").attr("fill", "#fff");
         d3.selectAll(".viewer-graph__label").attr("fill", "#555");
         let color_categorical = d3.scaleOrdinal(d3.schemeCategory10);
-        // let color_dict = {'KS; A':'#1f77b4', 'KS; B':'#ff7f0e', 'NE; A':'#2ca02c', 'NE; B':'#d62728'};
-        // let color_dict = {'KS; B':'#ff7f0e', 'NE; B':'#1f77b4'};
 
-        // let color_dict = {};
-        // // get # catogories
-        // this.nodes.forEach(node=>{
-        //     for(let c in node.categorical_cols_summary[col_key]){
-        //         if(Object.keys(color_dict).indexOf(c)===-1){
-        //             color_dict[c] = "";
-        //         }
-        //     }
-        // })
-        let idx = 0;
+        let color_dict = {};
+
+        let categories = [];
+
+        this.nodes.forEach(node=>{
+            for(let c in node.categorical_cols_summary[col_key]){
+                if(categories.indexOf(c)===-1){
+                    categories.push(c);
+                }
+            }
+        });
+
+        // ordering categories to make sure the colors are consistent
+        categories.sort((a,b)=>d3.ascending(a,b))
+        for(let i=0; i<categories.length; i++){
+            let c = categories[i];
+            color_dict[c] = color_categorical(i);
+        }
 
         // let that = this;
         let pie = d3.pie()
@@ -1273,16 +1270,7 @@ class Graph{
                 p.category_id = c;
                 p.value = node.categorical_cols_summary[col_key][c];
                 p.node_id = node.id;
-                // p.color = color_dict[c]
-                if(Object.keys(color_dict).indexOf(c)!=-1){
-                // if(color_dict[c]!=""){
-                    p.color = color_dict[c];
-                } else {
-                    p.color = color_categorical(idx);
-                    // p.color = d3.interpolateRainbow((idx+1)/Object.keys(color_dict).length);
-                    idx += 1;
-                    color_dict[c] = p.color;
-                }
+                p.color = color_dict[c];
                 pie_data.push(p);
             }
             if(pie_data.length > 16){

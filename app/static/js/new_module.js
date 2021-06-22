@@ -115,7 +115,8 @@ class New_Module{
         clg.exit().remove();
         clg = clg.enter().append("option").merge(clg)
             .html(d=>d);
-
+        
+        this.categorical_cols = categorical_cols;
     }
 
     draw_feature_names(){
@@ -298,12 +299,43 @@ class New_Module{
     add_plot(){
         console.log(this.data)
         this.clear_canvas();
+
+        let color_categorical;
+        let color_scale;
+        let color_dict
             
-        let color = d3.scaleOrdinal(d3.schemeCategory10);
-        // let color = {'KS; A':'#1f77b4', 'KS; B':'#ff7f0e', 'NE; A':'#2ca02c', 'NE; B':'#d62728'};
+        if(this.categorical_cols.indexOf(this.data.color_name)!=-1){
+            color_categorical = d3.scaleOrdinal(d3.schemeCategory10);
+            // let color = {'KS; A':'#1f77b4', 'KS; B':'#ff7f0e', 'NE; A':'#2ca02c', 'NE; B':'#d62728'};
+            color_dict = {};
+            let categories = [];
+            this.data.color_col.forEach(c=>{
+                if(categories.indexOf(c)===-1){
+                    categories.push(c);
+                }
+            })
+            categories.sort((a,b)=>d3.ascending(a,b));
+            for(let i=0; i<categories.length; i++){
+                let c = categories[i];
+                color_dict[c] = color_categorical(i);
+            }
+        } else {
+            color_scale = d3.scaleLinear()
+                .domain([Math.min(...this.data.color_col), Math.max(...this.data.color_col)])
+                .range(["yellow", "red"]);
+        }
+
         let margin = {"left":20, "top":20, "right":10, "bottom":15};
         let width = $(this.panel_body_inner.node()).width();
-        let height = width/5*3+5;
+        let legend_height = 80;
+        let rect_height = 10;
+        let rect_width = 25;
+        let rect_margin = 10;
+        if(this.categorical_cols.indexOf(this.data.color_name)!=-1){
+            legend_height = Object.keys(color_dict).length * (rect_height+rect_margin) + rect_margin*2;
+        }
+        let height = width/5*3 + 5;
+        let svg_height = height + legend_height;
 
         let x = this.data.x_col;
         let y = this.data.y_col;
@@ -319,9 +351,10 @@ class New_Module{
         let module_svg = this.panel_body_inner.append("svg")
             .attr("id", this.module_id+"_svg")
             .attr("width", width)
-            .attr("height", height);
+            .attr("height", svg_height);
         module_svg.append("g").attr("id", this.module_id+"_axis_group");
         module_svg.append("g").attr("id", this.module_id+"_circle_group");
+        module_svg.append("g").attr("id", this.module_id+"_legend_group");
 
         let cg = d3.select("#"+this.module_id+"_circle_group").selectAll("circle").data(this.data.x_col);
         cg.exit().remove();
@@ -329,11 +362,13 @@ class New_Module{
             .attr("cx", d=>xScale(d))
             .attr("cy", (d,i)=>yScale(this.data.y_col[i]))
             .attr("r", 2.5)
-            // .attr("r",1.8)
-            // .attr("fill", "orange")
             .attr("fill", (d,i)=>{
-                // return color[this.data.color_col[i]];
-                return color(this.data.color_col[i]);
+                if(this.categorical_cols.indexOf(this.data.color_name)!=-1){
+                    return color_dict[this.data.color_col[i]];
+                } else{
+                    return color_scale(this.data.color_col[i]);
+                }
+                
             })
             .style("opacity", 0.6)
 
@@ -348,6 +383,51 @@ class New_Module{
             .call(d3.axisLeft(yScale).ticks(5))
             .classed("axis_line", true)
             .attr("transform", "translate("+margin.left+",0)");
+
+        // legend
+        let legend_group = d3.select("#"+this.module_id+"_legend_group");
+        if(this.categorical_cols.indexOf(this.data.color_name)!=-1){
+            let color_array = d3.entries(color_dict);
+            let lg = legend_group.selectAll("g").data(color_array)
+                .enter().append("g")
+                .attr("transform", "translate(" + rect_margin + "," + (height+2*rect_margin) + ")");
+            lg.append("rect")
+                .attr("x",0)
+                .attr("y",(d,i)=>i*(rect_height+rect_margin))
+                .attr("height", rect_height)
+                .attr("width",rect_width)
+                .attr("fill", d=>d.value)
+                .style("opacity", 0.8);
+            lg.append("text")
+                .attr("x", rect_width+rect_margin*3)
+                .attr("y", (d,i)=>i*(rect_height+rect_margin)+8)
+                .style("font-size", "12px")
+                .text(d=>d.key);
+        } else {
+            let axisMargin = 10;
+            let colorTileNumber = 50;
+            let colorTileHeight = 20;
+            let colorTileWidth = (width - (axisMargin * 2)) / colorTileNumber;
+            let axisDomain = color_scale.domain();
+
+            let tickValues = [axisDomain[0], d3.mean(axisDomain), axisDomain[1]];
+            let axisScale = d3.scaleLinear().domain(axisDomain).range([0, width -  axisMargin*2]);
+            let axis = d3.axisBottom(axisScale).tickValues(tickValues);
+
+            legend_group.attr("transform", `translate(${axisMargin},${height+axisMargin})`)
+            legend_group.append("g").attr("transform", `translate(0,${colorTileHeight*2})`).call(axis);
+
+            let domainStep = (axisDomain[1] - axisDomain[0])/colorTileNumber;
+            let rects = d3.range(axisDomain[0], axisDomain[1], domainStep)
+            let rg = legend_group.selectAll("rect").data(rects)
+                .enter().append("rect")
+                .attr('x', d=>axisScale(d))
+            .attr('y', 10)
+            .attr('width', colorTileWidth-1)
+            .attr('height',colorTileHeight)
+            .attr('fill', d=>color_scale(d));
+        }
+
 
     }
 
