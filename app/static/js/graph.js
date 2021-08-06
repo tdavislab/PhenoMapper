@@ -1,9 +1,10 @@
 class Graph{
-    constructor(graph_data, col_keys, connected_components, categorical_cols, other_cols=undefined){
+    constructor(graph_data, col_keys, connected_components, categorical_cols, other_cols=undefined, filter_functions=undefined){
         this.nodes = graph_data.nodes;
         this.links = graph_data.links;
         this.col_keys = col_keys;
         this.connected_components = {};
+        this.filter_functions = filter_functions;
         for(let i=0; i<connected_components.length; i++){
             this.connected_components["cluster"+i] = connected_components[i];
         }
@@ -40,56 +41,62 @@ class Graph{
         this.hist_scale = this.get_scale();
 
         // color functions
-        // this.COLORMAPS = {"- None -":undefined, 
-        // "Yellow, Red":["yellow", "red"], 
-        // "Purple, Red":["purple", "red"],
-        // "Yellow, Blue":["yellow", "blue"], 
-        // "Green, Blue":["green", "blue"]};
         this.COLORMAPS = {"- None -":undefined, 
         "spectral":d3.interpolateSpectral, 
         "turbo":d3.interpolateTurbo,
         "BuYlRd":d3.interpolateRdYlBu};
         // this.colorScale = d3.scaleLinear();
-        this.colorScale = d3.scaleSequential(d3.interpolateSpectral);
-
-        // this.COLORMAPS = [
-        //     { 'label': '- None -', 'scheme': null },
-        //     // { 'label': 'Rainbow', 'scheme': 'interpolateRainbow' },
-        //     { 'label': 'Yellow, Red', 'scheme': 'interpolateYlOrRd' },
-        //     // { 'label': 'Yellow, Blue', 'scheme': 'interpolateYlOrBr' },
-        //     // { 'label': 'Yellow, Green', 'scheme': 'interpolateYlGn' },
-        //     // { 'label': 'Yellow, Green, Blue', 'scheme': 'interpolateYlGnBu' },
-        //     { 'label': 'Purple, Red', 'scheme': 'interpolatePuRd' },
-        //     // { 'label': 'Purple, Blue', 'scheme': 'interpolatePuBu' },
-        //     // { 'label': 'Purple, Blue, Green', 'scheme': 'interpolatePuBuGn' },
-        //     { 'label': 'Green, Blue', 'scheme': 'interpolateGnBu' },
-        //     // { 'label': 'Red', 'scheme': 'interpolateOrRd' },
-        //     // { 'label': 'Red, Blue', 'scheme': 'interpolateRdPu' },
-        //     // { 'label': 'Blue', 'scheme': 'interpolateBlues' },
-        //     // { 'label': 'Blue, Purple', 'scheme': 'interpolateBuPu' }
-        //   ]      
+        this.colorScale = d3.scaleSequential(d3.interpolateSpectral);     
         
         this.label_column = "row index";
 
         this.color_functions();
         this.size_functions();
+        this.toggle_graph_layout();
         this.select_view();
-        // this.draw_mapper();
         this.draw_mapper_fd();
         this.selection_nodes();
+    }
 
-        this.layout_alg = "Force directed layout";
+    toggle_graph_layout(){
+        this.layout_alg = "fd";
         let layout_dropdown = document.getElementById("graph_layout_dropdown");
         let that = this;
         layout_dropdown.onchange = function(){
-            let layout_alg = layout_dropdown.options[layout_dropdown.selectedIndex].text;
-            if(layout_alg === "Force directed layout"){
+            that.layout_alg = layout_dropdown.options[layout_dropdown.selectedIndex].value;
+            if(that.layout_alg === "fd"){
+                $("#graph_layout_filter-container").remove()
                 that.draw_mapper_fd();
-            } else{
-                that.draw_mapper();
+            } else if(that.layout_alg === "sorted"){
+                let filter_row = d3.select("#workspace-graph_layout").select(".block_body-inner").append("div")
+                    .classed("row", true)
+                    .attr("id", "graph_layout_filter-container")
+                    .style("padding-top", "5px")
+                    .style("padding-bottom", "5px");
+                filter_row.append("div")
+                    .classed("col-sm-4", true)
+                    .classed("col-form-label", true)
+                    .html("Filter function")
+                filter_row.append("div")
+                    .classed("col-sm-8", true)
+                    .attr("id", "graph_layout_filter_dropdown-container")
+                $("#graph_layout_filter_dropdown-container").append('<select class="custom-select"  name="graph_layout_filter_dropdown" id="graph_layout_filter_dropdown"></select>')
+                that.filter_functions.forEach(filter=>{
+                    d3.select("#graph_layout_filter_dropdown").append("option")
+                        .html(filter);
+                })
+                that.sorted_filter = that.filter_functions[0];
+                let filter_dropdown = document.getElementById("graph_layout_filter_dropdown");
+                filter_dropdown.onchange = function(){
+                    that.sorted_filter = filter_dropdown.options[filter_dropdown.selectedIndex].text;
+                    console.log(that.sorted_filter)
+                    that.draw_mapper_sorted();
+                }
+                that.draw_mapper_sorted();
             }
         }
     }
+
 
     color_functions(){
         let selections = ['- None -', 'Number of points'].concat(this.col_keys);
@@ -681,7 +688,14 @@ class Graph{
     }
 
     draw_mapper_fd(){
-        console.log(this.nodes)
+        this.axis_group.remove();
+        this.axis_group = this.graphSvg_g.append("g")
+            .attr("id","graph-axis-group");
+
+        this.nodes.forEach(node=>{
+            delete node['fx'];
+        })
+
         let simulation = d3.forceSimulation(this.nodes)
             .force("link", d3.forceLink(this.links).id(function(d) { return d.id; }))
             .force("charge", d3.forceManyBody().strength(-200))
@@ -872,8 +886,7 @@ class Graph{
         }
     }
 
-    draw_mapper(){
-        console.log(this.nodes)
+    draw_mapper_sorted(){
         let simulation = d3.forceSimulation(this.nodes)
             .force("link", d3.forceLink(this.links).id(function(d) { return d.id; }))
             .force("charge", d3.forceManyBody().strength(-200))
@@ -891,8 +904,7 @@ class Graph{
             l.target.links.target.push(`link${l.source.id}_${l.target.id}`);
         })
 
-        let selected_lens = 'DAP';
-        // let selected_lens = 'y';
+        let selected_lens = this.sorted_filter;
 
         let margin = 40;
         let lens_values = this.nodes.map(d=>d.lens_avg[selected_lens]);

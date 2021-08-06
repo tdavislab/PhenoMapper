@@ -321,7 +321,7 @@ d3.select("#mapper_loader")
                 data: JSON.stringify(mapper_data)
             }, function(res){
                 console.log(res);
-                that.graph = new Graph(res.mapper, that.side_bar.all_cols, res.connected_components, that.side_bar.categorical_cols, that.side_bar.other_cols);
+                that.graph = new Graph(res.mapper, that.side_bar.all_cols, res.connected_components, that.side_bar.categorical_cols, that.side_bar.other_cols, that.side_bar.config.filter);
             })
         } else{
             alert("Please import a dataset frist!")

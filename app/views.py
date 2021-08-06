@@ -250,6 +250,7 @@ def pca():
         data.index = range(len(data))
     pca = PCA(n_components=2)
     scaler = MinMaxScaler()
+    cols = cols_dict['cols_numerical']
     data_new = scaler.fit_transform(data.loc[:,cols])
     data_new = pca.fit_transform(data_new)
     data_new = pd.DataFrame(data_new)
