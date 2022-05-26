@@ -59,8 +59,10 @@ class Graph{
     }
 
     toggle_graph_layout(){
+        $("#graph_layout_filter-container").remove()
         this.layout_alg = "fd";
         let layout_dropdown = document.getElementById("graph_layout_dropdown");
+        layout_dropdown.selectedIndex = 0;
         let that = this;
         layout_dropdown.onchange = function(){
             that.layout_alg = layout_dropdown.options[layout_dropdown.selectedIndex].value;
@@ -694,6 +696,7 @@ class Graph{
 
         this.nodes.forEach(node=>{
             delete node['fx'];
+            delete node['vy'];
         })
 
         let simulation = d3.forceSimulation(this.nodes)
@@ -888,15 +891,16 @@ class Graph{
 
     draw_mapper_sorted(){
         let simulation = d3.forceSimulation(this.nodes)
-            .force("link", d3.forceLink(this.links).id(function(d) { return d.id; }))
-            .force("charge", d3.forceManyBody().strength(-200))
-            .force("center", d3.forceCenter(this.width/2, this.height/2))
-            .force("x", d3.forceX().strength(0.2))
-            .force("y", d3.forceY().strength(0.4))
+            // .force("link", d3.forceLink(this.links).id(function(d) { return d.id; }))
+            // .force("charge", d3.forceManyBody().strength(-200))
+            // .force("center", d3.forceCenter(this.width/2, this.height/2))
+            // .force("x", d3.forceX().strength(0.2))
+            // .force("y", d3.forceY().strength(0.4))
             .stop();
 
         this.nodes.forEach(node=>{
             node.links = {"source":[], "target":[]};
+            console.log(node.vy)
         })
 
         this.links.forEach(l=>{
@@ -929,14 +933,14 @@ class Graph{
             .call(lens_axis);
         
         this.axis_group.append("text")
-            .attr("transform", `translate(${this.width/2},${Math.max(...this.nodes.map(d=>d.y))+60})`)
+            .attr("transform", `translate(${this.width/2},${y_max+60})`)
             .text(selected_lens)
         
         let ng = this.node_group.selectAll("g").data(this.nodes);
         ng.exit().remove();
         ng = ng.enter().append("g").merge(ng)
             .attr("transform", function (d) {
-                return "translate(" + d.x + "," + d.y + ")";
+                return "translate(" + d.x + ",0)";
             })
             .attr("class", "viewer-graph__vertex-group")
             .attr("id",(d)=>"group"+d.id)
