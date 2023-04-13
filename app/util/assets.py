@@ -4,6 +4,7 @@ from .. import app
 
 bundles = {
     'js': Bundle(
+        'js/jquery-3.5.0.min.js',
         'js/graph.js',
         'js/side_bar.js',
         'js/regression.js',
